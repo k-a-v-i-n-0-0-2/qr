@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Capture Memories</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Landing View -->
+        <div id="landing-view" class="view active">
+            <h1 id="event-title">Capture Memories</h1>
+            <p>Snap a photo to share it instantly.</p>
+            <div class="button-group" style="display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 250px;">
+                <button id="start-camera-btn" class="primary-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    Open Camera
+                </button>
+                <button id="upload-gallery-btn" class="primary-btn" style="background-color: #4b5563;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    Upload from Gallery
+                </button>
+                <input type="file" id="file-upload" accept="image/*" style="display: none;">
+            </div>
+        </div>
+
+        <!-- Camera View -->
+        <div id="camera-view" class="view">
+            <div class="camera-wrapper">
+                <video id="camera-feed" autoplay playsinline></video>
+                <div class="watermark" id="live-watermark">Capture Memories</div>
+            </div>
+            
+            <div class="controls">
+                <button id="capture-btn" class="capture-btn">
+                    <div class="inner-circle"></div>
+                </button>
+            </div>
+            <button id="cancel-camera-btn" class="icon-btn close-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+
+        <!-- Preview View -->
+        <div id="preview-view" class="view">
+            <div class="preview-wrapper">
+                <img id="photo-preview" alt="Preview">
+            </div>
+            <div id="upload-status" class="status-overlay">
+                <div class="spinner"></div>
+                <p>Uploading...</p>
+            </div>
+        </div>
+
+        <!-- Success View -->
+        <div id="success-view" class="view">
+            <div class="success-icon">🎉</div>
+            <h2>Uploaded Successfully!</h2>
+            <p>Thank you for sharing this moment.</p>
+            <button id="take-another-btn" class="primary-btn">Take Another Photo</button>
+        </div>
+    </div>
+
+    <!-- Hidden canvas for processing image (watermark & compression) -->
+    <canvas id="photo-canvas" style="display: none;"></canvas>
+
+    <script src="script.js"></script>
+</body>
+</html>
