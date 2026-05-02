@@ -30,25 +30,28 @@ async function getDriveService() {
 const router = express.Router();
 
 router.post('/upload', async (req, res) => {
+  console.log('--- Upload Started ---');
   try {
     const { image, eventName = 'Event' } = req.body;
 
     if (!image) {
+      console.warn('Upload failed: No image provided');
       return res.status(400).json({ success: false, message: 'No image provided' });
     }
 
     const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
-
     if (!folderId) {
       console.error('GOOGLE_DRIVE_FOLDER_ID is missing in env');
       return res.status(500).json({ success: false, message: 'Server configuration error' });
     }
 
-    // Extract base64 data (remove data:image/jpeg;base64, prefix)
+    console.log('Initializing Google Drive Service...');
+    const drive = await getDriveService();
+
+    console.log('Processing image buffer...');
     const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
     const imageBuffer = Buffer.from(base64Data, 'base64');
-
-    const drive = await getDriveService();
+    console.log(`Image size: ${(imageBuffer.length / 1024).toFixed(2)} KB`);
 
     const bufferStream = new Readable();
     bufferStream.push(imageBuffer);
@@ -69,12 +72,14 @@ router.post('/upload', async (req, res) => {
       body: bufferStream
     };
 
+    console.log(`Uploading to Google Drive (Folder: ${folderId})...`);
     const response = await drive.files.create({
       resource: fileMetadata,
       media: media,
       fields: 'id'
     });
 
+    console.log('✅ Upload Successful! File ID:', response.data.id);
     res.json({
       success: true,
       fileId: response.data.id,
@@ -82,12 +87,14 @@ router.post('/upload', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Upload Error:', error);
+    console.error('❌ Upload Error:', error);
     res.status(500).json({
       success: false,
       message: 'Upload failed',
       error: error.message
     });
+  } finally {
+    console.log('--- Upload Request Finished ---');
   }
 });
 
