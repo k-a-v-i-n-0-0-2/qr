@@ -1,23 +1,22 @@
 const { google } = require('googleapis');
 const readline = require('readline');
 const fs = require('fs');
+const dotenv = require('dotenv');
 
-// You need to get these from Google Cloud Console -> Credentials -> OAuth client ID (Desktop app)
-const CLIENT_ID = 'YOUR_CLIENT_ID_HERE';
-const CLIENT_SECRET = 'YOUR_CLIENT_SECRET_HERE';
+// Load environment variables from .env
+dotenv.config();
 
-if (CLIENT_ID === 'YOUR_CLIENT_ID_HERE') {
-  console.log('\n❌ Please edit setup-auth.js and replace YOUR_CLIENT_ID_HERE and YOUR_CLIENT_SECRET_HERE');
-  console.log('To get them:');
-  console.log('1. Go to Google Cloud Console -> APIs & Services -> Credentials');
-  console.log('2. Click "Create Credentials" -> "OAuth client ID"');
-  console.log('3. Choose "Desktop app" as Application type');
-  console.log('4. Copy the Client ID and Client Secret into this file.\n');
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
+if (!CLIENT_ID || !CLIENT_SECRET || CLIENT_ID.includes('YOUR_CLIENT_ID')) {
+  console.log('\n❌ Google Client ID or Secret missing in .env file.');
+  console.log('Please ensure your .env file has GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET set.');
   process.exit(1);
 }
 
 const REDIRECT_URI = 'http://localhost:3000/oauth2callback';
-const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
+const SCOPES = ['https://www.googleapis.com/auth/drive'];
 
 const oAuth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
@@ -54,15 +53,17 @@ app.get('/oauth2callback', async (req, res) => {
     console.log('\n✅ Successfully got tokens!');
     console.log('Refresh Token:', tokens.refresh_token);
     
-    let envContent = '';
-    if (fs.existsSync('.env')) {
-      envContent = fs.readFileSync('.env', 'utf8');
+    let envContent = fs.readFileSync('.env', 'utf8');
+    
+    if (envContent.includes('GOOGLE_REFRESH_TOKEN=')) {
+      envContent = envContent.replace(/GOOGLE_REFRESH_TOKEN=.*/, `GOOGLE_REFRESH_TOKEN=${tokens.refresh_token}`);
+    } else {
+      envContent += `\nGOOGLE_REFRESH_TOKEN=${tokens.refresh_token}\n`;
     }
     
-    envContent += `\nGOOGLE_CLIENT_ID=${CLIENT_ID}\nGOOGLE_CLIENT_SECRET=${CLIENT_SECRET}\nGOOGLE_REFRESH_TOKEN=${tokens.refresh_token}\n`;
     fs.writeFileSync('.env', envContent);
     
-    console.log('✅ Appended GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REFRESH_TOKEN to your .env file.');
+    console.log('✅ Updated GOOGLE_REFRESH_TOKEN in your .env file.');
     console.log('You can now restart your server (node server.js) and it will use your personal quota!\n');
     
     server.close();

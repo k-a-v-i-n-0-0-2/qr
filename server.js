@@ -16,7 +16,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
 
 // Configure Google Drive API
-const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
+const SCOPES = ['https://www.googleapis.com/auth/drive'];
 
 async function getDriveService() {
   let auth;

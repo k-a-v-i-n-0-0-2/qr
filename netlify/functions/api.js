@@ -9,7 +9,7 @@ app.use(cors());
 // Increase payload limit for base64 images
 app.use(express.json({ limit: '10mb' }));
 
-const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
+const SCOPES = ['https://www.googleapis.com/auth/drive'];
 
 async function getDriveService() {
   let auth;
@@ -91,6 +91,6 @@ router.post('/upload', async (req, res) => {
   }
 });
 
-app.use('/api', router);
+app.use(['/api', '/.netlify/functions/api'], router);
 
 module.exports.handler = serverless(app);
