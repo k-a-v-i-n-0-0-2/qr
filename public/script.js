@@ -85,7 +85,7 @@ function capturePhoto() {
 
     // Add Watermark
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.font = `bold ${Math.max(20, height * 0.05)}px 'Playfair Display', serif`;
+    ctx.font = `bold ${Math.max(20, height * 0.05)}px 'Outfit', sans-serif`;
     ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
     ctx.shadowBlur = 5;
     ctx.shadowOffsetX = 2;
@@ -141,7 +141,7 @@ function handleFileUpload(event) {
 
             // Add Watermark
             ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.font = `bold ${Math.max(20, height * 0.05)}px 'Playfair Display', serif`;
+            ctx.font = `bold ${Math.max(20, height * 0.05)}px 'Outfit', sans-serif`;
             ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
             ctx.shadowBlur = 5;
             ctx.shadowOffsetX = 2;
@@ -205,7 +205,8 @@ async function uploadPhoto(dataUrl) {
         }
     } catch (error) {
         console.error('Upload Error:', error);
-        uploadStatus.querySelector('.spinner').style.display = 'none';
+        const loader = uploadStatus.querySelector('.modern-loader');
+        if (loader) loader.style.display = 'none';
         uploadStatus.querySelector('p').textContent = `Upload failed: ${error.message}. Please try again.`;
         uploadStatus.querySelector('p').style.color = '#ef4444';
         
@@ -213,7 +214,8 @@ async function uploadPhoto(dataUrl) {
         setTimeout(() => {
             showView('landing');
             uploadStatus.style.display = 'none';
-            uploadStatus.querySelector('.spinner').style.display = 'block';
+            const loader = uploadStatus.querySelector('.modern-loader');
+            if (loader) loader.style.display = 'block';
         }, 3000);
     }
 }

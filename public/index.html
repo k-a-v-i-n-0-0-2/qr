@@ -3,97 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zara's 1st Birthday - Digital Diary</title>
+    <title>Zara's 1st Birthday - Photo Capture</title>
     <!-- Premium Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@0,700;1,700&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="diary-wrapper">
-        <div class="diary-container">
-            <div class="diary-spine"></div>
-            <div class="diary-page">
-                <!-- Decorative Corners -->
-                <div class="corner tl"></div>
-                <div class="corner tr"></div>
-                <div class="corner bl"></div>
-                <div class="corner br"></div>
+    <div class="app-background">
+        <div class="gradient-sphere shape-1"></div>
+        <div class="gradient-sphere shape-2"></div>
+        <div class="gradient-sphere shape-3"></div>
+    </div>
 
-                <div class="app-content">
-                    <!-- Landing View -->
-                    <div id="landing-view" class="view active">
-                        <div class="title-section">
-                            <span class="sub-title">Welcome to</span>
-                            <h1 id="event-title">Zara's 1st Birthday</h1>
-                            <div class="ornament">❧</div>
-                            <p class="description">Capture a memory for Zara's digital birthday diary.</p>
-                        </div>
+    <div class="app-wrapper">
+        <div class="glass-container">
+            <div class="app-content">
+                <!-- Landing View -->
+                <div id="landing-view" class="view active">
+                    <div class="title-section">
+                        <span class="sub-title">Celebrate</span>
+                        <h1 id="event-title">Zara's 1st Birthday</h1>
+                        <p class="description">Capture your favorite moments and share them instantly to the event gallery.</p>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button id="start-camera-btn" class="primary-btn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                            <span>Open Camera</span>
+                        </button>
                         
-                        <div class="button-group">
-                            <button id="start-camera-btn" class="diary-btn">
-                                <img src="seal.png" class="btn-seal" alt="seal">
-                                <span>Open Diary Camera</span>
-                            </button>
-                            
-                            <button id="upload-gallery-btn" class="secondary-btn">
-                                <span>Add from Gallery</span>
-                            </button>
-                            
-                            <input type="file" id="file-upload" accept="image/*" style="display: none;">
-                        </div>
-
-                        <div class="diary-footer">
-                            <p>May 2, 2026</p>
-                        </div>
+                        <button id="upload-gallery-btn" class="secondary-btn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                            <span>Upload from Gallery</span>
+                        </button>
+                        
+                        <input type="file" id="file-upload" accept="image/*" style="display: none;">
                     </div>
 
-                    <!-- Camera View -->
-                    <div id="camera-view" class="view">
-                        <div class="camera-frame">
-                            <div class="camera-wrapper">
-                                <video id="camera-feed" autoplay playsinline></video>
-                                <div class="camera-overlay"></div>
-                                <div class="watermark" id="live-watermark">Zara's 1st Birthday</div>
-                            </div>
-                        </div>
-                        
-                        <div class="controls">
-                            <button id="capture-btn" class="capture-btn">
-                                <div class="inner-circle"></div>
-                            </button>
-                            <button id="cancel-camera-btn" class="close-btn">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </button>
+                    <div class="app-footer">
+                        <p>May 2, 2026 • Secure Upload</p>
+                    </div>
+                </div>
+
+                <!-- Camera View -->
+                <div id="camera-view" class="view">
+                    <div class="camera-header">
+                        <h2>Take a Photo</h2>
+                        <button id="cancel-camera-btn" class="icon-btn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                    <div class="camera-frame">
+                        <div class="camera-wrapper">
+                            <video id="camera-feed" autoplay playsinline></video>
+                            <div class="watermark" id="live-watermark">Zara's 1st Birthday</div>
                         </div>
                     </div>
+                    
+                    <div class="controls">
+                        <button id="capture-btn" class="capture-btn">
+                            <div class="inner-circle"></div>
+                        </button>
+                    </div>
+                </div>
 
-                    <!-- Preview View -->
-                    <div id="preview-view" class="view">
-                        <div class="polaroid-frame">
-                            <div class="preview-wrapper">
-                                <img id="photo-preview" alt="Preview">
-                                <div class="photo-texture"></div>
-                            </div>
+                <!-- Preview View -->
+                <div id="preview-view" class="view">
+                    <div class="preview-header">
+                        <h2>Uploading...</h2>
+                    </div>
+                    <div class="preview-frame">
+                        <div class="preview-wrapper">
+                            <img id="photo-preview" alt="Preview">
                         </div>
                         <div id="upload-status" class="status-overlay">
-                            <div class="quill-loader"></div>
-                            <p>Inking the page...</p>
+                            <div class="modern-loader"></div>
+                            <p>Saving your memory...</p>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Success View -->
-                    <div id="success-view" class="view">
-                        <div class="success-content">
-                            <div class="success-seal">
-                                <img src="seal.png" alt="seal">
+                <!-- Success View -->
+                <div id="success-view" class="view">
+                    <div class="success-content">
+                        <div class="success-icon-wrapper">
+                            <div class="success-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             </div>
-                            <h2>Memory Saved!</h2>
-                            <div class="ornament">❦</div>
-                            <p>Your photo has been added to Zara's digital diary. Thank you for being part of her story.</p>
-                            <button id="take-another-btn" class="diary-btn mini">Write Another Page</button>
                         </div>
+                        <h2>Memory Saved!</h2>
+                        <p>Your photo has been securely uploaded to the event gallery. Thank you for celebrating with us.</p>
+                        <button id="take-another-btn" class="primary-btn">Take Another Photo</button>
                     </div>
                 </div>
             </div>
