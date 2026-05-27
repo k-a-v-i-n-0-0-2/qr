@@ -1,4 +1,4 @@
-const EVENT_NAME = "Zara's Mehendi Station";
+const EVENT_NAME = "Zara's 1st Birthday";
 
 // DOM Elements
 const views = {
@@ -213,7 +213,7 @@ async function uploadPhoto(dataUrl) {
     try {
         uploadStatus.style.display = 'flex';
         const statusText = uploadStatus.querySelector('p');
-        if (statusText) statusText.textContent = 'Applying beautiful Henna...';
+        if (statusText) statusText.textContent = 'Uploading your memory...';
         
         const response = await fetch('/api/upload', {
             method: 'POST',
