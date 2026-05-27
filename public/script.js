@@ -1,4 +1,4 @@
-const EVENT_NAME = "Zara's 1st Birthday";
+const EVENT_NAME = "Zara's Mehendi Station";
 
 // DOM Elements
 const views = {
@@ -10,6 +10,7 @@ const views = {
 
 const startCameraBtn = document.getElementById('start-camera-btn');
 const cancelCameraBtn = document.getElementById('cancel-camera-btn');
+const switchCameraBtn = document.getElementById('switch-camera-btn');
 const captureBtn = document.getElementById('capture-btn');
 const takeAnotherBtn = document.getElementById('take-another-btn');
 const cameraFeed = document.getElementById('camera-feed');
@@ -21,33 +22,69 @@ const uploadGalleryBtn = document.getElementById('upload-gallery-btn');
 const fileUpload = document.getElementById('file-upload');
 
 let stream = null;
+let currentFacingMode = 'environment'; // Default to back camera for event guests
 
 // Initialize
-liveWatermark.textContent = EVENT_NAME;
-document.getElementById('event-title').textContent = EVENT_NAME;
+if (liveWatermark) {
+    liveWatermark.textContent = EVENT_NAME;
+}
+const eventTitle = document.getElementById('event-title');
+if (eventTitle) {
+    eventTitle.textContent = EVENT_NAME;
+}
 
 // Switch Views
 function showView(viewName) {
-    Object.values(views).forEach(v => v.classList.remove('active'));
-    views[viewName].classList.add('active');
+    Object.values(views).forEach(v => {
+        if (v) v.classList.remove('active');
+    });
+    if (views[viewName]) views[viewName].classList.add('active');
 }
 
 // Camera Functions
 async function startCamera() {
+    stopCamera(); // Stop any active stream first
+    
     try {
         stream = await navigator.mediaDevices.getUserMedia({
             video: {
-                facingMode: 'environment', // Prefer back camera
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
+                facingMode: currentFacingMode
             },
             audio: false
         });
         cameraFeed.srcObject = stream;
+        
+        // Handle mirroring style visually for selfie view
+        if (currentFacingMode === 'user') {
+            cameraFeed.classList.add('mirror');
+        } else {
+            cameraFeed.classList.remove('mirror');
+        }
+        
         showView('camera');
     } catch (err) {
         console.error("Camera access error:", err);
-        alert("Unable to access camera. Please check permissions or ensure you are using HTTPS.");
+        // Fallback: If environment (back) camera is requested but fails (e.g. on PC), try selfie camera
+        if (currentFacingMode === 'environment') {
+            console.log("Back camera failed, falling back to selfie camera...");
+            currentFacingMode = 'user';
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: currentFacingMode
+                    },
+                    audio: false
+                });
+                cameraFeed.srcObject = stream;
+                cameraFeed.classList.add('mirror');
+                showView('camera');
+            } catch (fallbackErr) {
+                console.error("Selfie camera fallback failed:", fallbackErr);
+                alert("Unable to access camera. Please check permissions or ensure you are using HTTPS.");
+            }
+        } else {
+            alert("Unable to access camera. Please check permissions or ensure you are using HTTPS.");
+        }
     }
 }
 
@@ -56,6 +93,11 @@ function stopCamera() {
         stream.getTracks().forEach(track => track.stop());
         stream = null;
     }
+}
+
+async function toggleCamera() {
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    await startCamera();
 }
 
 // Capture & Process Image
@@ -80,18 +122,21 @@ function capturePhoto() {
     photoCanvas.height = height;
     const ctx = photoCanvas.getContext('2d');
 
+    // Handle horizontal flip if we are using the selfie camera
+    if (currentFacingMode === 'user') {
+        ctx.translate(width, 0);
+        ctx.scale(-1, 1);
+    }
+
     // Draw video frame to canvas
     ctx.drawImage(cameraFeed, 0, 0, width, height);
 
-    // Add Watermark
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.font = `bold ${Math.max(20, height * 0.05)}px 'Outfit', sans-serif`;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-    ctx.shadowBlur = 5;
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 2;
-    ctx.textAlign = 'right';
-    ctx.fillText(EVENT_NAME, width - 40, height - 40);
+    // Reset horizontal flip transformation so the watermark text is NOT mirrored/backwards
+    if (currentFacingMode === 'user') {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+
+    // Watermark removed by request
 
     // Compress image to base64 JPEG (0.6 quality for faster upload)
     const compressedDataUrl = photoCanvas.toDataURL('image/jpeg', 0.6);
@@ -139,15 +184,7 @@ function handleFileUpload(event) {
             // Draw image to canvas
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Add Watermark
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.font = `bold ${Math.max(20, height * 0.05)}px 'Outfit', sans-serif`;
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-            ctx.shadowBlur = 5;
-            ctx.shadowOffsetX = 2;
-            ctx.shadowOffsetY = 2;
-            ctx.textAlign = 'right';
-            ctx.fillText(EVENT_NAME, width - 40, height - 40);
+            // Watermark removed by request
 
             // Compress image to base64 JPEG (0.6 quality)
             const compressedDataUrl = photoCanvas.toDataURL('image/jpeg', 0.6);
@@ -175,7 +212,8 @@ async function uploadPhoto(dataUrl) {
 
     try {
         uploadStatus.style.display = 'flex';
-        uploadStatus.querySelector('p').textContent = 'Inking the page...';
+        const statusText = uploadStatus.querySelector('p');
+        if (statusText) statusText.textContent = 'Applying beautiful Henna...';
         
         const response = await fetch('/api/upload', {
             method: 'POST',
@@ -192,7 +230,6 @@ async function uploadPhoto(dataUrl) {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-            const errorText = await response.text();
             throw new Error(`Server Error (${response.status})`);
         }
 
@@ -207,32 +244,47 @@ async function uploadPhoto(dataUrl) {
         console.error('Upload Error:', error);
         const loader = uploadStatus.querySelector('.modern-loader');
         if (loader) loader.style.display = 'none';
-        uploadStatus.querySelector('p').textContent = `Upload failed: ${error.message}. Please try again.`;
-        uploadStatus.querySelector('p').style.color = '#ef4444';
+        
+        const statusText = uploadStatus.querySelector('p');
+        if (statusText) {
+            statusText.textContent = `Upload failed: ${error.message}. Please try again.`;
+            statusText.style.color = '#b05a5a';
+        }
         
         // Go back to landing page after error
         setTimeout(() => {
             showView('landing');
             uploadStatus.style.display = 'none';
-            const loader = uploadStatus.querySelector('.modern-loader');
             if (loader) loader.style.display = 'block';
-        }, 3000);
+            if (statusText) statusText.style.color = '';
+        }, 3500);
     }
 }
 
 // Event Listeners
-startCameraBtn.addEventListener('click', startCamera);
+if (startCameraBtn) {
+    startCameraBtn.addEventListener('click', startCamera);
+}
+if (switchCameraBtn) {
+    switchCameraBtn.addEventListener('click', toggleCamera);
+}
 if (uploadGalleryBtn) {
     uploadGalleryBtn.addEventListener('click', () => fileUpload.click());
 }
 if (fileUpload) {
     fileUpload.addEventListener('change', handleFileUpload);
 }
-cancelCameraBtn.addEventListener('click', () => {
-    stopCamera();
-    showView('landing');
-});
-captureBtn.addEventListener('click', capturePhoto);
-takeAnotherBtn.addEventListener('click', () => {
-    showView('landing');
-});
+if (cancelCameraBtn) {
+    cancelCameraBtn.addEventListener('click', () => {
+        stopCamera();
+        showView('landing');
+    });
+}
+if (captureBtn) {
+    captureBtn.addEventListener('click', capturePhoto);
+}
+if (takeAnotherBtn) {
+    takeAnotherBtn.addEventListener('click', () => {
+        showView('landing');
+    });
+}

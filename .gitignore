@@ -1,3 +1,5 @@
 node_modules/
 .env
 service-account.json
+client_secret_*.json
+learned-nimbus-*.json
