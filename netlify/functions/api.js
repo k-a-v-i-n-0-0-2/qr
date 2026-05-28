@@ -1,55 +1,89 @@
-const express = require('express');
-const serverless = require('serverless-http');
-const cors = require('cors');
 const { google } = require('googleapis');
 const { Readable } = require('stream');
 
-const app = express();
-app.use(cors());
-// Increase payload limit for base64 images
-app.use(express.json({ limit: '10mb' }));
-
-const SCOPES = ['https://www.googleapis.com/auth/drive'];
-
 async function getDriveService() {
-  let auth;
-  
-  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_REFRESH_TOKEN) {
-    auth = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error(
+      `Missing credentials: CLIENT_ID=${!!clientId}, CLIENT_SECRET=${!!clientSecret}, REFRESH_TOKEN=${!!refreshToken}`
     );
-    auth.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
-  } else {
-     throw new Error("Google API credentials not found in environment.");
   }
+
+  const auth = new google.auth.OAuth2(clientId, clientSecret);
+  auth.setCredentials({ refresh_token: refreshToken });
+
+  // Force a token refresh to catch expired tokens early
+  await auth.getAccessToken();
 
   return google.drive({ version: 'v3', auth });
 }
 
-const router = express.Router();
+exports.handler = async (event) => {
+  // CORS headers for all responses
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
+  };
 
-router.post('/upload', async (req, res) => {
+  // Handle preflight
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers, body: '' };
+  }
+
+  // Only allow POST
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ success: false, message: 'Method not allowed' }),
+    };
+  }
+
+  // Route: only handle /upload
+  const path = event.path.replace('/.netlify/functions/api', '').replace('/api', '');
+  if (path !== '/upload' && path !== '/upload/') {
+    return {
+      statusCode: 404,
+      headers,
+      body: JSON.stringify({ success: false, message: `Unknown route: ${path}` }),
+    };
+  }
+
   console.log('--- Upload Started ---');
+
   try {
-    const { image, eventName = 'Event' } = req.body;
+    const body = JSON.parse(event.body || '{}');
+    const { image, eventName = 'Event' } = body;
 
     if (!image) {
-      console.warn('Upload failed: No image provided');
-      return res.status(400).json({ success: false, message: 'No image provided' });
+      console.warn('Upload failed: No image data in request body');
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ success: false, message: 'No image provided' }),
+      };
     }
 
     const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
     if (!folderId) {
-      console.error('GOOGLE_DRIVE_FOLDER_ID is missing in env');
-      return res.status(500).json({ success: false, message: 'Server configuration error' });
+      console.error('GOOGLE_DRIVE_FOLDER_ID is missing in environment');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ success: false, message: 'Server configuration error: missing folder ID' }),
+      };
     }
 
     console.log('Initializing Google Drive Service...');
     const drive = await getDriveService();
 
     console.log('Processing image buffer...');
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
     const imageBuffer = Buffer.from(base64Data, 'base64');
     console.log(`Image size: ${(imageBuffer.length / 1024).toFixed(2)} KB`);
 
@@ -62,42 +96,51 @@ router.post('/upload', async (req, res) => {
     const safeEventName = eventName.replace(/[^a-zA-Z0-9]/g, '_');
     const fileName = `${safeEventName}_${timestamp}_${randomId}.jpg`;
 
-    const fileMetadata = {
-      name: fileName,
-      parents: [folderId]
-    };
+    console.log(`Uploading "${fileName}" to Google Drive (Folder: ${folderId})...`);
 
-    const media = {
-      mimeType: 'image/jpeg',
-      body: bufferStream
-    };
-
-    console.log(`Uploading to Google Drive (Folder: ${folderId})...`);
     const response = await drive.files.create({
-      resource: fileMetadata,
-      media: media,
-      fields: 'id'
+      resource: {
+        name: fileName,
+        parents: [folderId],
+      },
+      media: {
+        mimeType: 'image/jpeg',
+        body: bufferStream,
+      },
+      fields: 'id',
     });
 
     console.log('✅ Upload Successful! File ID:', response.data.id);
-    res.json({
-      success: true,
-      fileId: response.data.id,
-      message: 'Uploaded successfully 🎉'
-    });
 
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        success: true,
+        fileId: response.data.id,
+        message: 'Uploaded successfully 🎉',
+      }),
+    };
   } catch (error) {
-    console.error('❌ Upload Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Upload failed',
-      error: error.message
-    });
+    console.error('❌ Upload Error:', error.message);
+    console.error('Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+
+    let userMessage = 'Upload failed. Please try again.';
+    if (error.message.includes('invalid_grant') || error.message.includes('Token has been expired')) {
+      userMessage = 'Server auth expired. Please contact the event organizer.';
+      console.error('🔑 REFRESH TOKEN EXPIRED - Need to re-run setup-auth.js and update Netlify env vars');
+    }
+
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({
+        success: false,
+        message: userMessage,
+        error: error.message,
+      }),
+    };
   } finally {
     console.log('--- Upload Request Finished ---');
   }
-});
-
-app.use(['/api', '/.netlify/functions/api'], router);
-
-module.exports.handler = serverless(app);
+};
