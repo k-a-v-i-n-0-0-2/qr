@@ -236,6 +236,14 @@ async function uploadPhoto(dataUrl) {
         const result = await response.json();
 
         if (result.success) {
+            const linkContainer = document.getElementById('drive-link-container');
+            const fileLink = document.getElementById('drive-file-link');
+            if (linkContainer && fileLink && result.fileId) {
+                fileLink.href = `https://drive.google.com/open?id=${result.fileId}`;
+                linkContainer.style.display = 'block';
+            } else if (linkContainer) {
+                linkContainer.style.display = 'none';
+            }
             showView('success');
         } else {
             throw new Error(result.message || 'Upload failed');
@@ -285,6 +293,8 @@ if (captureBtn) {
 }
 if (takeAnotherBtn) {
     takeAnotherBtn.addEventListener('click', () => {
+        const linkContainer = document.getElementById('drive-link-container');
+        if (linkContainer) linkContainer.style.display = 'none';
         showView('landing');
     });
 }
